@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog Platform API</title>
+    <style>
+        :root { --primary: #4a90e2; --bg: #f4f7f6; --text: #333; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { text-align: center; color: #2c3e50; margin-bottom: 30px; }
+        
+        .form-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 40px; }
+        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
+        label { font-weight: bold; margin-bottom: 5px; }
+        input, textarea { padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; }
+        button { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 600; transition: background 0.3s; }
+        button:hover { background: #357abd; }
+
+        .post-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; position: relative; }
+        .post-card h2 { margin-top: 0; color: #2c3e50; }
+        .post-card p { color: #555; }
+        .post-meta { font-size: 0.85rem; color: #888; border-top: 1px solid #eee; pt: 10px; margin-top: 15px; display: flex; justify-content: space-between; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>My Blogging Platform</h1>
+
+        <div class="form-card">
+            <form id="blogForm">
+                <div class="form-group">
+                    <label>Title *</label>
+                    <input type="text" id="title" placeholder="Enter post title" required>
+                </div>
+                <div class="form-group">
+                    <label>Body *</label>
+                    <textarea id="body" rows="4" placeholder="What's on your mind?" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Author</label>
+                    <input type="text" id="author" placeholder="Anonymous">
+                </div>
+                <button type="submit">Create Post</button>
+            </form>
+        </div>
+
+        <div id="postsList">
+            </div>
+    </div>
+
+    <script>
+        const blogForm = document.getElementById('blogForm');
+        const postsList = document.getElementById('postsList');
+
+        async function loadPosts() {
+            const res = await fetch('/api/blogs');
+            const posts = await res.json();
+            postsList.innerHTML = posts.map(p => `
+                <div class="post-card">
+                    <h2>${p.title}</h2>
+                    <p>${p.body}</p>
+                    <div class="post-meta">
+                        <span>👤 ${p.author || 'Anonymous'}</span>
+                        <span>📅 ${new Date(p.createdAt).toLocaleDateString()}</span>
+                    </div>
+                </div>
+            `).reverse().join('');
+        }
+
+        blogForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const data = {
+                title: document.getElementById('title').value,
+                body: document.getElementById('body').value,
+                author: document.getElementById('author').value || "Anonymous"
+            };
+            await fetch('/api/blogs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            blogForm.reset();
+            loadPosts();
+        };
+
+        loadPosts();
+    </script>
+</body>
+</html>
