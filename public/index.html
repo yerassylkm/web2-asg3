@@ -50,38 +50,67 @@
     </div>
 
     <script>
-        const blogForm = document.getElementById('blogForm');
         const postsList = document.getElementById('postsList');
+        const blogForm = document.getElementById('blogForm');
 
         async function loadPosts() {
             const res = await fetch('/api/blogs');
             const posts = await res.json();
             postsList.innerHTML = posts.map(p => `
-                <div class="post-card">
+                <div class="post-card" id="post-${p._id}">
                     <h2>${p.title}</h2>
                     <p>${p.body}</p>
                     <div class="post-meta">
-                        <span>👤 ${p.author || 'Anonymous'}</span>
-                        <span>📅 ${new Date(p.createdAt).toLocaleDateString()}</span>
+                        <span>👤 ${p.author}</span>
+                        <div>
+                            <button onclick="editPost('${p._id}', '${p.title}', '${p.body}')" style="background: #ffc107; padding: 5px 10px; font-size: 12px;">Edit</button>
+                            <button onclick="deletePost('${p._id}')" style="background: #dc3545; padding: 5px 10px; font-size: 12px;">Delete</button>
+                        </div>
                     </div>
                 </div>
-            `).reverse().join('');
+            `).join('');
+        }
+
+        async function deletePost(id) {
+            if (confirm('Удалить этот пост?')) {
+                await fetch(`/api/blogs/${id}`, { method: 'DELETE' });
+                loadPosts();
+            }
+        }
+
+        async function editPost(id, oldTitle, oldBody) {
+            const newTitle = prompt("Новый заголовок:", oldTitle);
+            const newBody = prompt("Новый текст:", oldBody);
+            
+            if (newTitle && newBody) {
+                await fetch(`/api/blogs/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: newTitle, body: newBody })
+                });
+                loadPosts();
+            }
         }
 
         blogForm.onsubmit = async (e) => {
             e.preventDefault();
-            const data = {
-                title: document.getElementById('title').value,
-                body: document.getElementById('body').value,
-                author: document.getElementById('author').value || "Anonymous"
-            };
-            await fetch('/api/blogs', {
+            const title = document.getElementById('title').value;
+            const body = document.getElementById('body').value;
+            const author = document.getElementById('author').value;
+
+            const res = await fetch('/api/blogs', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+                body: JSON.stringify({ title, body, author: author || "Anonymous" })
             });
-            blogForm.reset();
-            loadPosts();
+
+            if (res.status === 400) {
+                const errorData = await res.json();
+                alert("Ошибка: " + errorData.error);
+            } else {
+                blogForm.reset();
+                loadPosts();
+            }
         };
 
         loadPosts();
