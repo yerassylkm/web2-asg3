@@ -21,6 +21,18 @@ router.get('/blogs', async (req, res) => {
     res.json(blogs);
 });
 
+router.get('/blogs/:id', async (req, res) => {
+    try {
+        const blog = await Blog.findById(req.params.id); 
+        if (!blog) {
+            return res.status(404).json({ error: "Пост с таким ID не найден" });
+        }
+        res.json(blog); 
+    } catch (err) {
+        res.status(500).json({ error: "Ошибка сервера или неверный формат ID" });
+    }
+});
+
 router.put('/blogs/:id', async (req, res) => {
     try {
         const { title, body } = req.body;
